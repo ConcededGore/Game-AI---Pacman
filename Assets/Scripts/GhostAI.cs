@@ -202,8 +202,12 @@ public class GhostAI : MonoBehaviour {
                     // etc.
                     // most of your AI code will be placed here!
                     //remember what direction reverse is
-                    Vector2 reverseDir = move.direc * -1;
-                    //Debug.Log("reverseDir is " + reverseDir);
+                    Vector2 reverseDir = new Vector2(0,0);
+                    if (tick - previousTick >= frameLockout)
+                    {
+                        reverseDir = move.direc * -1;
+                        //Debug.Log("reverseDir is " + reverseDir);
+                    }
                     if (ghostID == BLINKY && tick - previousTick >= frameLockout)
                     {
                         if (ghostMode == ORIGINAL) {
