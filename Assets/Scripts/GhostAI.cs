@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 /*****************************************************************************
  * IMPORTANT NOTES - PLEASE READ
@@ -96,6 +97,10 @@ public class GhostAI : MonoBehaviour {
 	public int[] choices ;
 	public float choice;
 
+    public int frameLockout;
+    int previousTick;
+    int tick = 0;
+
 	public enum State{
 		waiting,
 		entering,
@@ -134,9 +139,11 @@ public class GhostAI : MonoBehaviour {
     /// 
     /// </summary>
 	void Update () {
-		switch (_state) {
+        //Debug.Log("got here 1");
+        tick++;
+        switch (_state) {
 		case(State.waiting):
-
+            //Debug.Log("got here 2");
             // below is some sample code showing how you deal with animations, etc.
 			move._dir = Movement.Direction.still;
 			if (releaseTime <= 0f) {
@@ -160,26 +167,104 @@ public class GhostAI : MonoBehaviour {
 
 
 		case(State.leaving):
+                move._dir = Movement.Direction.still;
+                //Debug.Log("got here 4");
+                if (transform.position.x < 13.48f || transform.position.x > 13.52)
+                {
+                    //print ("GOING LEFT OR RIGHT");
+                    transform.position = Vector3.Lerp(transform.position, new Vector3(13.5f, transform.position.y, transform.position.z), 3f * Time.deltaTime);
+                }
+                else
+                {
+                    gameObject.GetComponent<Animator>().SetInteger("Direction", 2);
+                    transform.position = Vector3.Lerp(transform.position, new Vector3(transform.position.x, -11f, transform.position.z), 3f * Time.deltaTime);
+                }
+                if(transform.position.y < -10.8 && transform.position.y > -11.2)
+                {
+                    fleeing = false;
+                    dead = false;
+                    gameObject.GetComponent<Animator>().SetBool("Running", false);
+                    _state = State.active;
+                }
+                break;
 
-			break;
+            case (State.active):
+                //Debug.Log("got here 4");
+                if (!dead)
+                {
+                    // etc.
+                    // most of your AI code will be placed here!
+                    //remember what direction reverse is
+                    Vector2 reverseDir = move.direc * -1;
+                    Debug.Log("reverseDir is " + reverseDir);
+                    if (ghostID == BLINKY && tick - previousTick >= frameLockout)
+                    {
+                        if (ghostMode == ORIGINAL)
+                        {
+                            target = pacMan;
+                            Vector2[] movements = new Vector2[4];
+                            Movement.Direction[] dirs = new Movement.Direction[4];
+                            //Figure out where each possible movement would place the ghost
+                            movements[0] = new Vector2(transform.position.x + 1, transform.position.y);
+                            dirs[0] = Movement.Direction.right;
+                            movements[1] = new Vector2(transform.position.x, transform.position.y + 1);
+                            dirs[1] = Movement.Direction.up;
+                            movements[2] = new Vector2(transform.position.x - 1, transform.position.y);
+                            dirs[2] = Movement.Direction.left;
+                            movements[3] = new Vector2(transform.position.x, transform.position.y - 1);
+                            dirs[3] = Movement.Direction.down;
 
-		case(State.active):
-            if (dead) {
+                            //Sort by distance to target
+                            for (int x = 0; x < 4 - 1; x++)
+                            {
+                                for(int y = 0; y < 4 - x - 1; y++)
+                                {
+                                    if(Vector2.Distance(movements[y], new Vector2(target.transform.position.x, target.transform.position.y)) >
+                                       Vector2.Distance(movements[y + 1], new Vector2(target.transform.position.x, target.transform.position.y)))
+                                    {
+                                        Vector2 temp = movements[y];
+                                        movements[y] = movements[y + 1];
+                                        movements[y + 1] = temp;
+
+                                        Movement.Direction temp1 = dirs[y];
+                                        dirs[y] = dirs[y + 1];
+                                        dirs[y + 1] = temp1;
+                                    }
+                                }
+                            }
+                            //Debug stuff
+                            Debug.Log("movements are: ");
+                            for (int z = 0; z < 4; z++)
+                            {
+                                Debug.Log(movements[z] + " with direction " + dirs[z] + " with distance " + Vector2.Distance(movements[z], new Vector2(target.transform.position.x, target.transform.position.y)));
+                            }
+                            //Starting with the movement that brings the ghost the closes, check if the movements are valid, using the first one that is
+                            for(int i = 0; i < 4; i ++)
+                            {
+                                if(move.checkDirectionClear(num2vec((int)dirs[i] - 1)) && !compareDirectionsButUseful(num2vec((int)dirs[i] - 1), reverseDir))
+                                {
+                                    move._dir = dirs[i];
+                                    Debug.Log("chosen direction is entry " + i + ", " + dirs[i]);
+                                    previousTick = tick;
+                                    i = 10;
+                                    
+                                }
+                            }
+                        }
+                    }
+                }
                 // etc.
-                // most of your AI code will be placed here!
-            }
-            // etc.
 
-			break;
+                break;
 
 		case State.entering:
 
             // Leaving this code in here for you.
 			move._dir = Movement.Direction.still;
-
-			if (transform.position.x < 13.48f || transform.position.x > 13.52) {
-				//print ("GOING LEFT OR RIGHT");
-				transform.position = Vector3.Lerp (transform.position, new Vector3 (13.5f, transform.position.y, transform.position.z), 3f * Time.deltaTime);
+            //Debug.Log("got here 5");
+            if (transform.position.x < 13.48f || transform.position.x > 13.52) {
+			    //print ("GOING LEFT OR RIGHT");
+			    transform.position = Vector3.Lerp (transform.position, new Vector3 (13.5f, transform.position.y, transform.position.z), 3f * Time.deltaTime);
 			} else if (transform.position.y > -13.99f || transform.position.y < -14.01f) {
 				gameObject.GetComponent<Animator>().SetInteger ("Direction", 2);
 				transform.position = Vector3.Lerp (transform.position, new Vector3 (transform.position.x, -14f, transform.position.z), 3f * Time.deltaTime);
@@ -202,11 +287,11 @@ public class GhostAI : MonoBehaviour {
             case 0:
                 return new Vector2(0, 1);
             case 1:
-    			return new Vector2(1, 0);
+    			return new Vector2(0, -1);
 		    case 2:
-			    return new Vector2(0, -1);
-            case 3:
 			    return new Vector2(-1, 0);
+            case 3:
+			    return new Vector2(1, 0);
             default:    // should never happen
                 return new Vector2(0, 0);
         }
@@ -220,4 +305,14 @@ public class GhostAI : MonoBehaviour {
 		}
 		return true;
 	}
+
+    bool compareDirectionsButUseful(Vector2 n, Vector2 p)
+    {
+        for(int x = 0; x < 2; x++)
+        {
+            if (n[x] != p[x])
+                return false;
+        }
+        return true;
+    }
 }

@@ -20,7 +20,7 @@ public class Movement : MonoBehaviour {
 
 	public float MSpeed = 2f;
 
-	private Vector2 direc= new Vector2(0f,0f);
+	public Vector2 direc= new Vector2(0f,0f);
 	private static Vector2 none= new Vector2(0f,0f);
 	private static Vector2 up = new Vector2(0f,1f);
 	private static Vector2 down = new Vector2(0f,-1f);

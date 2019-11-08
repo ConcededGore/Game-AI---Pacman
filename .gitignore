@@ -1,0 +1,12 @@
+
+.vs/Game-AI---Pacman/v15/
+
+Library/APIUpdater/
+
+Library/
+
+*.info
+
+*.meta
+
+Temp/
