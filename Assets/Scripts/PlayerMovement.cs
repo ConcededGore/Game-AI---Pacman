@@ -68,9 +68,4 @@ public class PlayerMovement : MonoBehaviour {
 			//move._dir = Movement.Direction.still;
 		}
 	}
-
-    public Movement.Direction getDirection() {
-        return move._dir;
-    }
-
 }
