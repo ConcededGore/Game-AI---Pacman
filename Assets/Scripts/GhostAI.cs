@@ -215,14 +215,14 @@ public class GhostAI : MonoBehaviour {
                             Vector2[] movements = new Vector2[4];
                             Movement.Direction[] dirs = new Movement.Direction[4];
                             //Figure out where each possible movement would place the ghost
-                            movements[0] = new Vector2(transform.position.x + 1, transform.position.y);
-                            dirs[0] = Movement.Direction.right;
-                            movements[1] = new Vector2(transform.position.x, transform.position.y + 1);
-                            dirs[1] = Movement.Direction.up;
+                            movements[0] = new Vector2(transform.position.x, transform.position.y + 1);
+                            dirs[0] = Movement.Direction.up;
+                            movements[1] = new Vector2(transform.position.x, transform.position.y - 1);
+                            dirs[1] = Movement.Direction.down;
                             movements[2] = new Vector2(transform.position.x - 1, transform.position.y);
                             dirs[2] = Movement.Direction.left;
-                            movements[3] = new Vector2(transform.position.x, transform.position.y - 1);
-                            dirs[3] = Movement.Direction.down;
+                            movements[3] = new Vector2(transform.position.x + 1, transform.position.y);
+                            dirs[3] = Movement.Direction.right;
 
                             //Sort by distance to target
                             /*for (int x = 0; x < 4 - 1; x++) {
@@ -271,12 +271,8 @@ public class GhostAI : MonoBehaviour {
                                     validDirs[i] = 0;
                                 }
                             }
-
-                            Debug.Log("startcap");
-                            for (int i = 0; i < 4; i++) {
-                                Debug.Log(validDirs[i] + " ");
-                            }
-                            Debug.Log("endcap");
+                            
+                            Debug.Log("startcap" + validDirs[0] + " " + validDirs[1] + " " + validDirs[2] + " " + validDirs[3]);
 
                             // Ands the two arrays together, to invalidate the reverse direction
                             // C# can't use ints as bools for some reason
@@ -288,11 +284,7 @@ public class GhostAI : MonoBehaviour {
                                 }
                             }
                             
-                            Debug.Log("startcap1");
-                            for (int i = 0; i < 4; i++) {
-                                Debug.Log(validDirs[i] + " ");
-                            }
-                            Debug.Log("endcap1");
+                            Debug.Log(validDirs[0] + " " + validDirs[1] + " "  + validDirs[2] + " " + validDirs[3] + "endcap");
 
                             int decision = 4;
                             float[] dists = new float[4];
@@ -302,12 +294,16 @@ public class GhostAI : MonoBehaviour {
                             for (int i = 0; i < 4; i++) {
                                 if (validDirs[i] == 1) {
                                     // check distance to target
-                                    dists[i] = Vector2.Distance(movements[i], targPos);
+                                    if (validDirs[i] == 0) {
+                                        dists[i] = 100000000000000000000000f;
+                                    } else {
+                                        dists[i] = Vector2.Distance(movements[i], targPos);
+                                    }
                                 }
                             }
 
                             // chose based on minimum distance
-                            minDist = dists[0];
+                            minDist = 100000000000000000000000f;
                             decision = 0;
                             for (int i = 0; i < 4; i++) {
                                 if (dists[i] < minDist && validDirs[i] == 1) {
@@ -316,11 +312,11 @@ public class GhostAI : MonoBehaviour {
                                 }
                             }
 
+                            // 0-3 Up, Down, Left, Right
                             if (decision < 0 || decision > 3) {
                                 Debug.Log("Decision is invalid");
                             }
-
-                            //Debug.Log("test " + dirs[decision]);
+                            
                             move._dir = dirs[decision];
 
                             for (int i = 0; i < 4; i++) {
@@ -329,16 +325,16 @@ public class GhostAI : MonoBehaviour {
 
                             switch (decision) {
                                 case 0:
-                                    prevChoices[2] = 0;
+                                    prevChoices[1] = 0;
                                     break;
                                 case 1:
-                                    prevChoices[3] = 0;
-                                    break;
-                                case 2:
                                     prevChoices[0] = 0;
                                     break;
+                                case 2:
+                                    prevChoices[3] = 0;
+                                    break;
                                 case 3:
-                                    prevChoices[1] = 0;
+                                    prevChoices[2] = 0;
                                     break;
                                 default:
                                     Debug.Log("DirSwitch is defaulting with decision = " + decision);
@@ -348,7 +344,7 @@ public class GhostAI : MonoBehaviour {
                         }
                     }
 
-                    if (ghostID == PINKY && tick - previousTick >= frameLockout) {
+                    if (ghostID == /*PINKY*/5 && tick - previousTick >= frameLockout) {
                         target = pacMan;
                         Vector2[] movements = new Vector2[4];
                         Movement.Direction[] dirs = new Movement.Direction[4];
@@ -395,19 +391,20 @@ public class GhostAI : MonoBehaviour {
                         }
                     }
 
-                    if (ghostID == INKY && tick - previousTick >= frameLockout) {
+                    if (ghostID == /*INKY*/5 && tick - previousTick >= frameLockout) {
                         target = pacMan;
                         Vector2[] movements = new Vector2[4];
                         Movement.Direction[] dirs = new Movement.Direction[4];
                         //Figure out where each possible movement would place the ghost
-                        movements[0] = new Vector2(transform.position.x + 1, transform.position.y);
-                        dirs[0] = Movement.Direction.right;
-                        movements[1] = new Vector2(transform.position.x, transform.position.y + 1);
-                        dirs[1] = Movement.Direction.up;
+                        
+                        movements[0] = new Vector2(transform.position.x, transform.position.y + 1);
+                        dirs[0] = Movement.Direction.up;
+                        movements[1] = new Vector2(transform.position.x, transform.position.y - 1);
+                        dirs[1] = Movement.Direction.down;
                         movements[2] = new Vector2(transform.position.x - 1, transform.position.y);
                         dirs[2] = Movement.Direction.left;
-                        movements[3] = new Vector2(transform.position.x, transform.position.y - 1);
-                        dirs[3] = Movement.Direction.down;
+                        movements[3] = new Vector2(transform.position.x + 1, transform.position.y);
+                        dirs[3] = Movement.Direction.right;
 
                         //Sort by distance to target
                         for (int x = 0; x < 4 - 1; x++) {
@@ -484,15 +481,15 @@ public class GhostAI : MonoBehaviour {
         switch (n)
         {
             case 0:
-                return new Vector2(1, 0);
+                return new Vector2(0, 1);
             case 1:
-    			return new Vector2(0, 1);
+    			return new Vector2(0, -1);
 		    case 2:
 			    return new Vector2(-1, 0);
             case 3:
-			    return new Vector2(0, -1);
+			    return new Vector2(1, 0);
             default:    // should never happen
-                if (ghostID != PINKY) {
+                if (ghostID == BLINKY) {
                     Debug.Log("num2vec defaulting at " + n);
                 }
                 return new Vector2(0, 0);
