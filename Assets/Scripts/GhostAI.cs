@@ -255,6 +255,10 @@ public class GhostAI : MonoBehaviour {
                                 }
                             }
                         }
+                        else if(ghostMode == CUSTOM)
+                        {
+
+                        }
                     }
                     else if (ghostID == CLYDE && tick - previousTick >= frameLockout)
                     {
