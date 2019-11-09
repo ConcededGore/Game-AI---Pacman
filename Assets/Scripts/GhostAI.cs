@@ -86,7 +86,7 @@ public class GhostAI : MonoBehaviour {
     public float[] directions = new float[4];
     
 	//remember previous choice and make inverse illegal!
-	private int[] prevChoices = new int[4]{1,1,1,1};
+	private int[] prevChoices = new int[4]{0,0,0,0};
 
     // This will be PacMan when chasing, or Gate, when leaving the Pit
 	public GameObject target;
@@ -101,7 +101,14 @@ public class GhostAI : MonoBehaviour {
     int previousTick;
     int tick = 0;
 
-	public enum State{
+    Vector2 test = new Vector2(0, 0);
+
+    public void OnDrawGizmos() {
+        Gizmos.color = Color.white;
+        Gizmos.DrawSphere(test, 1);
+    }
+
+    public enum State{
 		waiting,
 		entering,
 		leaving,
@@ -203,29 +210,25 @@ public class GhostAI : MonoBehaviour {
                     }
                     if (ghostID == BLINKY && tick - previousTick >= frameLockout)
                     {
-                        if (ghostMode == ORIGINAL)
-                        {
+                        if (ghostMode == ORIGINAL) {
                             target = pacMan;
                             Vector2[] movements = new Vector2[4];
                             Movement.Direction[] dirs = new Movement.Direction[4];
                             //Figure out where each possible movement would place the ghost
-                            movements[0] = new Vector2(transform.position.x + 1, transform.position.y);
-                            dirs[0] = Movement.Direction.right;
-                            movements[1] = new Vector2(transform.position.x, transform.position.y + 1);
-                            dirs[1] = Movement.Direction.up;
+                            movements[0] = new Vector2(transform.position.x, transform.position.y + 1);
+                            dirs[0] = Movement.Direction.up;
+                            movements[1] = new Vector2(transform.position.x, transform.position.y - 1);
+                            dirs[1] = Movement.Direction.down;
                             movements[2] = new Vector2(transform.position.x - 1, transform.position.y);
                             dirs[2] = Movement.Direction.left;
-                            movements[3] = new Vector2(transform.position.x, transform.position.y - 1);
-                            dirs[3] = Movement.Direction.down;
+                            movements[3] = new Vector2(transform.position.x + 1, transform.position.y);
+                            dirs[3] = Movement.Direction.right;
 
                             //Sort by distance to target
-                            for (int x = 0; x < 4 - 1; x++)
-                            {
-                                for(int y = 0; y < 4 - x - 1; y++)
-                                {
-                                    if(Vector2.Distance(movements[y], new Vector2(target.transform.position.x, target.transform.position.y)) >
-                                       Vector2.Distance(movements[y + 1], new Vector2(target.transform.position.x, target.transform.position.y)))
-                                    {
+                            /*for (int x = 0; x < 4 - 1; x++) {
+                                for (int y = 0; y < 4 - x - 1; y++) {
+                                    if (Vector2.Distance(movements[y], new Vector2(target.transform.position.x, target.transform.position.y)) >
+                                       Vector2.Distance(movements[y + 1], new Vector2(target.transform.position.x, target.transform.position.y))) {
                                         Vector2 temp = movements[y];
                                         movements[y] = movements[y + 1];
                                         movements[y + 1] = temp;
@@ -235,23 +238,23 @@ public class GhostAI : MonoBehaviour {
                                         dirs[y + 1] = temp1;
                                     }
                                 }
-                            }
-                            //Debug stuff
-                            //Debug.Log("movements are: ");
-                            //for (int z = 0; z < 4; z++)
-                            //{
-                            //    Debug.Log(movements[z] + " with direction " + dirs[z] + " with distance " + Vector2.Distance(movements[z], new Vector2(target.transform.position.x, target.transform.position.y)));
-                            //}
-                            //Starting with the movement that brings the ghost the closes, check if the movements are valid, using the first one that is
-                            for(int i = 0; i < 4; i ++)
+                            } */
+
+                            // Debug stuff
+                            /*Debug.Log("movements are: ");
+                            for (int z = 0; z < 4; z++)
                             {
-                                if(move.checkDirectionClear(num2vec((int)dirs[i] - 1)) && !compareDirectionsButUseful(num2vec((int)dirs[i] - 1), reverseDir))
-                                {
-                                    move._dir = dirs[i];
-                                    //Debug.Log("chosen direction is entry " + i + ", " + dirs[i]);
-                                    previousTick = tick;
-                                    i = 10;
-                                    
+                                Debug.Log(movements[z] + " with direction " + dirs[z] + " with distance " + Vector2.Distance(movements[z], new Vector2(target.transform.position.x, target.transform.position.y)));
+                            } */
+                            // Starting with the movement that brings the ghost the closest, check if the movements are valid, using the first one that is
+
+                            int[] validDirs = new int[4]{1, 1, 1, 1};
+
+                            // Check to see if the vector is initialized (if the ghost has moved yet)
+                            if (!checkPrevInit()) {
+                                Debug.Log("Initializing");
+                                for (int i = 0; i < 4; i++) {
+                                    prevChoices[i] = 1;
                                 }
                             }
                         }
@@ -267,62 +270,199 @@ public class GhostAI : MonoBehaviour {
                             if(Vector2.Distance(new Vector2(transform.position.x, transform.position.y), new Vector2(pacMan.transform.position.x, pacMan.transform.position.y)) >= 8)
                             {
                                 target = pacMan;
+
+                            
                             }
-                            else
-                            {
-                                target = GameObject.Find("BottomLeft");
+
+                            for (int i = 0; i < 4; i++) {
+                                validDirs[i] = 0;
+                            }
+                            // Checks to see if there is any obstructions
+                            for (int i = 0; i < 4; i++) {
+                                if (move.checkDirectionClear(num2vec((int)dirs[i] - 1))) {
+                                    validDirs[i] = 1;
+                                }
+                                else {
+                                    validDirs[i] = 0;
+                                }
                             }
                             
-                            Vector2[] movements = new Vector2[4];
-                            Movement.Direction[] dirs = new Movement.Direction[4];
-                            //Figure out where each possible movement would place the ghost
-                            movements[0] = new Vector2(transform.position.x + 1, transform.position.y);
-                            dirs[0] = Movement.Direction.right;
-                            movements[1] = new Vector2(transform.position.x, transform.position.y + 1);
-                            dirs[1] = Movement.Direction.up;
-                            movements[2] = new Vector2(transform.position.x - 1, transform.position.y);
-                            dirs[2] = Movement.Direction.left;
-                            movements[3] = new Vector2(transform.position.x, transform.position.y - 1);
-                            dirs[3] = Movement.Direction.down;
+                            Debug.Log("startcap" + validDirs[0] + " " + validDirs[1] + " " + validDirs[2] + " " + validDirs[3]);
 
-                            //Sort by distance to target
-                            for (int x = 0; x < 4 - 1; x++)
-                            {
-                                for (int y = 0; y < 4 - x - 1; y++)
-                                {
-                                    if (Vector2.Distance(movements[y], new Vector2(target.transform.position.x, target.transform.position.y)) >
-                                       Vector2.Distance(movements[y + 1], new Vector2(target.transform.position.x, target.transform.position.y)))
-                                    {
-                                        Vector2 temp = movements[y];
-                                        movements[y] = movements[y + 1];
-                                        movements[y + 1] = temp;
+                            // Ands the two arrays together, to invalidate the reverse direction
+                            // C# can't use ints as bools for some reason
+                            for (int i = 0; i < 4; i++) {
+                                if (validDirs[i] == 1 && prevChoices[i] == 1) {
+                                    validDirs[i] = 1;
+                                } else {
+                                    validDirs[i] = 0;
+                                }
+                            }
+                            
+                            Debug.Log(validDirs[0] + " " + validDirs[1] + " "  + validDirs[2] + " " + validDirs[3] + "endcap");
 
-                                        Movement.Direction temp1 = dirs[y];
-                                        dirs[y] = dirs[y + 1];
-                                        dirs[y + 1] = temp1;
+                            int decision = 4;
+                            float[] dists = new float[4];
+                            float minDist = float.MaxValue;
+                            Vector2 targPos = target.transform.position;
+
+                            for (int i = 0; i < 4; i++) {
+                                if (validDirs[i] == 1) {
+                                    // check distance to target
+                                    if (validDirs[i] == 0) {
+                                        dists[i] = 100000000000000000000000f;
+                                    } else {
+                                        dists[i] = Vector2.Distance(movements[i], targPos);
                                     }
                                 }
                             }
-                            //Debug stuff
-                            Debug.Log("movements are: ");
-                            for (int z = 0; z < 4; z++)
-                            {
-                                Debug.Log(movements[z] + " with direction " + dirs[z] + " with distance " + Vector2.Distance(movements[z], new Vector2(target.transform.position.x, target.transform.position.y)));
-                            }
-                            //Starting with the movement that brings the ghost the closes, check if the movements are valid, using the first one that is
-                            for (int i = 0; i < 4; i++)
-                            {
-                                if (move.checkDirectionClear(num2vec((int)dirs[i] - 1)) && !compareDirectionsButUseful(num2vec((int)dirs[i] - 1), reverseDir))
-                                {
-                                    move._dir = dirs[i];
-                                    Debug.Log("chosen direction is entry " + i + ", " + dirs[i]);
-                                    previousTick = tick;
-                                    i = 10;
 
+                            // chose based on minimum distance
+                            minDist = 100000000000000000000000f;
+                            decision = 0;
+                            for (int i = 0; i < 4; i++) {
+                                if (dists[i] < minDist && validDirs[i] == 1) {
+                                    minDist = dists[i];
+                                    decision = i;
+                                }
+                            }
+
+                            // 0-3 Up, Down, Left, Right
+                            if (decision < 0 || decision > 3) {
+                                Debug.Log("Decision is invalid");
+                            }
+                            
+                            move._dir = dirs[decision];
+
+                            for (int i = 0; i < 4; i++) {
+                                prevChoices[i] = 1;
+                            }
+
+                            switch (decision) {
+                                case 0:
+                                    prevChoices[1] = 0;
+                                    break;
+                                case 1:
+                                    prevChoices[0] = 0;
+                                    break;
+                                case 2:
+                                    prevChoices[3] = 0;
+                                    break;
+                                case 3:
+                                    prevChoices[2] = 0;
+                                    break;
+                                default:
+                                    Debug.Log("DirSwitch is defaulting with decision = " + decision);
+                                    break;
+                            }
+
+                        }
+                    }
+
+                    if (ghostID == /*PINKY*/5 && tick - previousTick >= frameLockout) {
+                        target = pacMan;
+                        Vector2[] movements = new Vector2[4];
+                        Movement.Direction[] dirs = new Movement.Direction[4];
+                        //Figure out where each possible movement would place the ghost
+                        movements[0] = new Vector2(transform.position.x + 1, transform.position.y);
+                        dirs[0] = Movement.Direction.right;
+                        movements[1] = new Vector2(transform.position.x, transform.position.y + 1);
+                        dirs[1] = Movement.Direction.up;
+                        movements[2] = new Vector2(transform.position.x - 1, transform.position.y);
+                        dirs[2] = Movement.Direction.left;
+                        movements[3] = new Vector2(transform.position.x, transform.position.y - 1);
+                        dirs[3] = Movement.Direction.down;
+
+                        //Sort by distance to target
+                        for (int x = 0; x < 4 - 1; x++) {
+                            for (int y = 0; y < 4 - x - 1; y++) {
+                                float newx = target.transform.position.x;
+                                float newy = target.transform.position.y;
+                                //Debug.Log(num2vec((int)target.GetComponent<PlayerMovement>().getDirection() - 1));
+                                newx += num2vec((int)target.GetComponent<PlayerMovement>().getDirection() - 1).x * 4;
+                                newy += num2vec((int)target.GetComponent<PlayerMovement>().getDirection() - 1).y * 4;
+                                if (Vector2.Distance(movements[y], new Vector2(newx, newy)) >
+                                   Vector2.Distance(movements[y + 1], new Vector2(newx, newy))) {
+                                    Vector2 temp = movements[y];
+                                    movements[y] = movements[y + 1];
+                                    movements[y + 1] = temp;
+
+                                    Movement.Direction temp1 = dirs[y];
+                                    dirs[y] = dirs[y + 1];
+                                    dirs[y + 1] = temp1;
                                 }
                             }
                         }
+                        
+                        //Starting with the movement that brings the ghost the closes, check if the movements are valid, using the first one that is
+                        for (int i = 0; i < 4; i++) {
+                            if (move.checkDirectionClear(num2vec((int)dirs[i] - 1)) && !compareDirectionsButUseful(num2vec((int)dirs[i] - 1), reverseDir)) {
+                                move._dir = dirs[i];
+                                //Debug.Log("chosen direction is entry " + i + ", " + dirs[i]);
+                                previousTick = tick;
+                                i = 10;
+
+                            }
+                        }
                     }
+
+                    if (ghostID == /*INKY*/5 && tick - previousTick >= frameLockout) {
+                        target = pacMan;
+                        Vector2[] movements = new Vector2[4];
+                        Movement.Direction[] dirs = new Movement.Direction[4];
+                        //Figure out where each possible movement would place the ghost
+                        
+                        movements[0] = new Vector2(transform.position.x, transform.position.y + 1);
+                        dirs[0] = Movement.Direction.up;
+                        movements[1] = new Vector2(transform.position.x, transform.position.y - 1);
+                        dirs[1] = Movement.Direction.down;
+                        movements[2] = new Vector2(transform.position.x - 1, transform.position.y);
+                        dirs[2] = Movement.Direction.left;
+                        movements[3] = new Vector2(transform.position.x + 1, transform.position.y);
+                        dirs[3] = Movement.Direction.right;
+
+                        //Sort by distance to target
+                        for (int x = 0; x < 4 - 1; x++) {
+                            for (int y = 0; y < 4 - x - 1; y++) {
+                                float newx = target.transform.position.x;
+                                float newy = target.transform.position.y;
+                                newx += num2vec((int)target.GetComponent<PlayerMovement>().getDirection() - 1).x * 2;
+                                newy += num2vec((int)target.GetComponent<PlayerMovement>().getDirection() - 1).y * 2;
+                                Vector2 tempTarget = new Vector2(newx, newy);
+                                GameObject B = GameObject.Find("Blinky(Clone)");
+                                Vector2 Bpos = new Vector2(B.GetComponent<Transform>().position.x, B.GetComponent<Transform>().position.y);
+                                Vector2 tempVec = Bpos - tempTarget;
+                                float mag = tempVec.magnitude;
+                                tempVec.Normalize();
+                                tempVec *= (-1 * mag);
+                                newx = tempVec.x;
+                                newy = tempVec.y;
+                                //Debug.Log("Testing: " + newx + " " + newy);
+                                if (Vector2.Distance(movements[y], new Vector2(newx, newy)) >
+                                   Vector2.Distance(movements[y + 1], new Vector2(newx, newy))) {
+                                    Vector2 temp = movements[y];
+                                    movements[y] = movements[y + 1];
+                                    movements[y + 1] = temp;
+
+                                    Movement.Direction temp1 = dirs[y];
+                                    dirs[y] = dirs[y + 1];
+                                    dirs[y + 1] = temp1;
+                                }
+                            }
+                        }
+
+                        //Starting with the movement that brings the ghost the closes, check if the movements are valid, using the first one that is
+                        for (int i = 0; i < 4; i++) {
+                            if (move.checkDirectionClear(num2vec((int)dirs[i] - 1)) && !compareDirectionsButUseful(num2vec((int)dirs[i] - 1), reverseDir)) {
+                                move._dir = dirs[i];
+                                //Debug.Log("chosen direction is entry " + i + ", " + dirs[i]);
+                                previousTick = tick;
+                                i = 10;
+
+                            }
+                        }
+                    }
+
                 }
                 // etc.
 
@@ -364,6 +504,9 @@ public class GhostAI : MonoBehaviour {
             case 3:
 			    return new Vector2(1, 0);
             default:    // should never happen
+                if (ghostID == BLINKY) {
+                    Debug.Log("num2vec defaulting at " + n);
+                }
                 return new Vector2(0, 0);
         }
 	}
@@ -386,4 +529,14 @@ public class GhostAI : MonoBehaviour {
         }
         return true;
     }
+
+    bool checkPrevInit() {
+        for (int i = 0; i < 4; i++) {
+            if (prevChoices[i] != 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }
