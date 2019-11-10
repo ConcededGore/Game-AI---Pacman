@@ -101,6 +101,8 @@ public class GhostAI : MonoBehaviour {
     int previousTick;
     int tick = 0;
 
+    public Vector3 prevTile = new Vector3(-100,-100,-100);
+
 	public enum State{
 		waiting,
 		entering,
@@ -116,6 +118,7 @@ public class GhostAI : MonoBehaviour {
     private void Awake()
     {
         startPos = this.gameObject.transform.position;
+        
     }
 
     void Start () {
@@ -123,7 +126,8 @@ public class GhostAI : MonoBehaviour {
 		gate = GameObject.Find("Gate(Clone)");
 		pacMan = GameObject.Find("PacMan(Clone)") ? GameObject.Find("PacMan(Clone)") : GameObject.Find("PacMan 1(Clone)");
 		releaseTimeReset = releaseTime;
-	}
+        //tileTarget = startPos;
+    }
 
 	public void restart(){
 		releaseTime = releaseTimeReset;
@@ -184,6 +188,7 @@ public class GhostAI : MonoBehaviour {
                     fleeing = false;
                     dead = false;
                     gameObject.GetComponent<Animator>().SetBool("Running", false);
+                    //tileTarget = transform.position;
                     _state = State.active;
                 }
                 break;
@@ -196,26 +201,32 @@ public class GhostAI : MonoBehaviour {
                     // most of your AI code will be placed here!
                     //remember what direction reverse is
                     Vector2 reverseDir = new Vector2(0,0);
-                    if (tick - previousTick >= frameLockout)
-                    {
+                    ////if (tick - previousTick >= frameLockout)
+                    //{
                         reverseDir = move.direc * -1;
-                        //Debug.Log("reverseDir is " + reverseDir);
-                    }
-                    if (ghostID == BLINKY && tick - previousTick >= frameLockout)
+                    //Debug.Log("reverseDir is " + reverseDir);
+                    //}
+                    //Debug.Log("checking values:");
+                    //Debug.Log("checking values:");
+                    //Debug.Log("checking values:");
+                    if (ghostID == BLINKY && /*tick - previousTick >= frameLockout*/ (Mathf.Abs(Mathf.Abs(transform.position.x) - Mathf.Abs(prevTile.x)) >= 1.5f ||
+                        Mathf.Abs(Mathf.Abs(transform.position.y) - Mathf.Abs(prevTile.y)) >= 1.5f || !move.checkDirectionClear(num2vec((int)move._dir - 1))))
                     {
+                        Debug.Log("Rechecking");
+                        //Debug.Break();
                         if (ghostMode == ORIGINAL)
                         {
                             target = pacMan;
                             Vector2[] movements = new Vector2[4];
                             Movement.Direction[] dirs = new Movement.Direction[4];
                             //Figure out where each possible movement would place the ghost
-                            movements[0] = new Vector2(transform.position.x + 1, transform.position.y);
+                            movements[0] = new Vector2(transform.position.x + 1.5f, transform.position.y);
                             dirs[0] = Movement.Direction.right;
-                            movements[1] = new Vector2(transform.position.x, transform.position.y + 1);
+                            movements[1] = new Vector2(transform.position.x, transform.position.y + 1.5f);
                             dirs[1] = Movement.Direction.up;
-                            movements[2] = new Vector2(transform.position.x - 1, transform.position.y);
+                            movements[2] = new Vector2(transform.position.x - 1.5f, transform.position.y);
                             dirs[2] = Movement.Direction.left;
-                            movements[3] = new Vector2(transform.position.x, transform.position.y - 1);
+                            movements[3] = new Vector2(transform.position.x, transform.position.y - 1.5f);
                             dirs[3] = Movement.Direction.down;
 
                             //Sort by distance to target
@@ -249,6 +260,7 @@ public class GhostAI : MonoBehaviour {
                                 {
                                     move._dir = dirs[i];
                                     //Debug.Log("chosen direction is entry " + i + ", " + dirs[i]);
+                                    prevTile = transform.position;
                                     previousTick = tick;
                                     i = 10;
                                     
@@ -260,7 +272,8 @@ public class GhostAI : MonoBehaviour {
 
                         }
                     }
-                    else if (ghostID == CLYDE && tick - previousTick >= frameLockout)
+                    else if (ghostID == CLYDE && (Mathf.Abs(Mathf.Abs(transform.position.x) - Mathf.Abs(prevTile.x)) >= 1.5f ||
+                        Mathf.Abs(Mathf.Abs(transform.position.y) - Mathf.Abs(prevTile.y)) >= 1.5f || !move.checkDirectionClear(num2vec((int)move._dir - 1))))
                     {
                         if (ghostMode == ORIGINAL)
                         {
@@ -304,10 +317,10 @@ public class GhostAI : MonoBehaviour {
                                 }
                             }
                             //Debug stuff
-                            Debug.Log("movements are: ");
+                            //Debug.Log("movements are: ");
                             for (int z = 0; z < 4; z++)
                             {
-                                Debug.Log(movements[z] + " with direction " + dirs[z] + " with distance " + Vector2.Distance(movements[z], new Vector2(target.transform.position.x, target.transform.position.y)));
+                                //Debug.Log(movements[z] + " with direction " + dirs[z] + " with distance " + Vector2.Distance(movements[z], new Vector2(target.transform.position.x, target.transform.position.y)));
                             }
                             //Starting with the movement that brings the ghost the closes, check if the movements are valid, using the first one that is
                             for (int i = 0; i < 4; i++)
@@ -315,7 +328,8 @@ public class GhostAI : MonoBehaviour {
                                 if (move.checkDirectionClear(num2vec((int)dirs[i] - 1)) && !compareDirectionsButUseful(num2vec((int)dirs[i] - 1), reverseDir))
                                 {
                                     move._dir = dirs[i];
-                                    Debug.Log("chosen direction is entry " + i + ", " + dirs[i]);
+                                    //Debug.Log("chosen direction is entry " + i + ", " + dirs[i]);
+                                    prevTile = transform.position;
                                     previousTick = tick;
                                     i = 10;
 
