@@ -35,7 +35,8 @@ using System;
  * 
  *****************************************************************************/
 
-public class GhostAI : MonoBehaviour {
+public class GhostAI : MonoBehaviour
+{
 
     const int BLINKY = 1;   // These are used to set ghostID, to facilitate testing.
     const int PINKY = 2;
@@ -50,91 +51,98 @@ public class GhostAI : MonoBehaviour {
     Movement move;
     private Vector3 startPos;
     private bool[] dirs = new bool[4];
-	private bool[] prevDirs = new bool[4];
+    private bool[] prevDirs = new bool[4];
 
-	public float releaseTime = 0f;          // This could be a tunable number
-	private float releaseTimeReset = 0f;
-	public float waitTime = 0f;             // This could be a tunable number
+    public float releaseTime = 0f;          // This could be a tunable number
+    private float releaseTimeReset = 0f;
+    public float waitTime = 0f;             // This could be a tunable number
     private const float ogWaitTime = .1f;
-	public int range = 0;                   // This could be a tunable number
+    public int range = 0;                   // This could be a tunable number
 
     public bool dead = false;               // state variables
-	public bool fleeing = false;
+    public bool fleeing = false;
 
-	//Default: base value of likelihood of choice for each path
-	public float Dflt = 1f;
+    //Default: base value of likelihood of choice for each path
+    public float Dflt = 1f;
 
-	//Available: Zero or one based on whether a path is available
-	int A = 0;
+    //Available: Zero or one based on whether a path is available
+    int A = 0;
 
-	//Value: negative 1 or 1 based on direction of pacman
-	int V = 1;
+    //Value: negative 1 or 1 based on direction of pacman
+    int V = 1;
 
-	//Fleeing: negative if fleeing
-	int F = 1;
+    //Fleeing: negative if fleeing
+    int F = 1;
 
-	//Priority: calculated preference based on distance of target in one direction weighted by the distance in others (dist/total)
-	float P = 0f;
+    //Priority: calculated preference based on distance of target in one direction weighted by the distance in others (dist/total)
+    float P = 0f;
 
     // Variables to hold distance calcs
-	float distX = 0f;
-	float distY = 0f;
-	float total = 0f;
+    float distX = 0f;
+    float distY = 0f;
+    float total = 0f;
 
     // Percent chance of each coice. order is: up < right < 0 < down < left for random choice
     // These could be tunable numbers. You may or may not find this useful.
     public float[] directions = new float[4];
-    
-	//remember previous choice and make inverse illegal!
-	private int[] prevChoices = new int[4]{1,1,1,1};
+
+    //remember previous choice and make inverse illegal!
+    private int[] prevChoices = new int[4] { 1, 1, 1, 1 };
 
     // This will be PacMan when chasing, or Gate, when leaving the Pit
-	public GameObject target;
-	GameObject gate;
-	GameObject pacMan;
+    public GameObject target;
+    GameObject gate;
+    GameObject pacMan;
 
-	public bool chooseDirection = true;
-	public int[] choices ;
-	public float choice;
+    public bool chooseDirection = true;
+    public int[] choices;
+    public float choice;
 
     public int frameLockout;
     int previousTick;
     int tick = 0;
 
-    public Vector3 prevTile = new Vector3(-100,-100,-100);
+    public Vector3 prevTile = new Vector3(-100, -100, -100);
+    private bool justScared = true;
 
-	public enum State{
-		waiting,
-		entering,
-		leaving,
-		active,
-		fleeing,
+    public float fleeTime = 5f;
+    private float startedFleeing;
+
+    public enum State
+    {
+        waiting,
+        entering,
+        leaving,
+        active,
+        fleeing,
         scatter         // Optional - This is for more advanced ghost AI behavior
-	}
+    }
 
-	public State _state = State.waiting;
+    public State _state = State.waiting;
 
     // Use this for initialization
     private void Awake()
     {
         startPos = this.gameObject.transform.position;
-        
+
     }
 
-    void Start () {
-		move = GetComponent<Movement> ();
-		gate = GameObject.Find("Gate(Clone)");
-		pacMan = GameObject.Find("PacMan(Clone)") ? GameObject.Find("PacMan(Clone)") : GameObject.Find("PacMan 1(Clone)");
-		releaseTimeReset = releaseTime;
+    void Start()
+    {
+        move = GetComponent<Movement>();
+        gate = GameObject.Find("Gate(Clone)");
+        pacMan = GameObject.Find("PacMan(Clone)") ? GameObject.Find("PacMan(Clone)") : GameObject.Find("PacMan 1(Clone)");
+        releaseTimeReset = releaseTime;
         //tileTarget = startPos;
     }
 
-	public void restart(){
-		releaseTime = releaseTimeReset;
-		transform.position = startPos;
-		_state = State.waiting;
-	}
-	
+    public void restart()
+    {
+        releaseTime = releaseTimeReset;
+        transform.position = startPos;
+        _state = State.waiting;
+    }
+
     /// <summary>
     /// This is where most of the work will be done. A switch/case statement is probably 
     /// the first thing to test for. There can be additional tests for specific ghosts,
@@ -142,36 +150,45 @@ public class GhostAI : MonoBehaviour {
     /// could be controlled by changing values of some of the above variables, like
     /// 
     /// </summary>
-	void Update () {
+    void Update()
+    {
         //Debug.Log("got here 1");
         tick++;
-        switch (_state) {
-		case(State.waiting):
-            //Debug.Log("got here 2");
-            // below is some sample code showing how you deal with animations, etc.
-			move._dir = Movement.Direction.still;
-			if (releaseTime <= 0f) {
-				chooseDirection = true;
-				gameObject.GetComponent<Animator>().SetBool("Dead", false);
-				gameObject.GetComponent<Animator>().SetBool("Running", false);
-				gameObject.GetComponent<Animator>().SetInteger ("Direction", 0);
-				gameObject.GetComponent<Movement> ().MSpeed = 5f;
-
-				_state = State.leaving;
-
-                // etc.
-			}
-			gameObject.GetComponent<Animator>().SetBool("Dead", false);
-			gameObject.GetComponent<Animator>().SetBool("Running", false);
-			gameObject.GetComponent<Animator>().SetInteger ("Direction", 0);
-			gameObject.GetComponent<Movement> ().MSpeed = 5f;
-			releaseTime -= Time.deltaTime;
-            // etc.
-			break;
-
-
-		case(State.leaving):
+        if(fleeing)
+        {
+            _state = State.fleeing;
+        }
+        switch (_state)
+        {
+            case (State.waiting):
+                //Debug.Log("got here 2");
+                // below is some sample code showing how you deal with animations, etc.
+                justScared = true;
                 move._dir = Movement.Direction.still;
+                if (releaseTime <= 0f)
+                {
+                    chooseDirection = true;
+                    gameObject.GetComponent<Animator>().SetBool("Dead", false);
+                    gameObject.GetComponent<Animator>().SetBool("Running", false);
+                    gameObject.GetComponent<Animator>().SetInteger("Direction", 0);
+                    gameObject.GetComponent<Movement>().MSpeed = 5f;
+
+                    _state = State.leaving;
+
+                    // etc.
+                }
+                gameObject.GetComponent<Animator>().SetBool("Dead", false);
+                gameObject.GetComponent<Animator>().SetBool("Running", false);
+                gameObject.GetComponent<Animator>().SetInteger("Direction", 0);
+                gameObject.GetComponent<Movement>().MSpeed = 5f;
+                releaseTime -= Time.deltaTime;
+                // etc.
+                break;
+
+
+            case (State.leaving):
+                move._dir = Movement.Direction.still;
+                justScared = true;
                 //Debug.Log("got here 4");
                 if (transform.position.x < 13.48f || transform.position.x > 13.52)
                 {
@@ -183,7 +200,7 @@ public class GhostAI : MonoBehaviour {
                     gameObject.GetComponent<Animator>().SetInteger("Direction", 2);
                     transform.position = Vector3.Lerp(transform.position, new Vector3(transform.position.x, -11f, transform.position.z), 3f * Time.deltaTime);
                 }
-                if(transform.position.y < -10.8 && transform.position.y > -11.2)
+                if (transform.position.y < -10.8 && transform.position.y > -11.2)
                 {
                     fleeing = false;
                     dead = false;
@@ -195,15 +212,16 @@ public class GhostAI : MonoBehaviour {
 
             case (State.active):
                 //Debug.Log("got here 4");
+                justScared = true;
                 if (!dead)
                 {
                     // etc.
                     // most of your AI code will be placed here!
                     //remember what direction reverse is
-                    Vector2 reverseDir = new Vector2(0,0);
+                    Vector2 reverseDir = new Vector2(0, 0);
                     ////if (tick - previousTick >= frameLockout)
                     //{
-                        reverseDir = move.direc * -1;
+                    reverseDir = move.direc * -1;
                     //Debug.Log("reverseDir is " + reverseDir);
                     //}
                     //Debug.Log("checking values:");
@@ -212,7 +230,7 @@ public class GhostAI : MonoBehaviour {
                     if (ghostID == BLINKY && /*tick - previousTick >= frameLockout*/ (Mathf.Abs(Mathf.Abs(transform.position.x) - Mathf.Abs(prevTile.x)) >= 1.5f ||
                         Mathf.Abs(Mathf.Abs(transform.position.y) - Mathf.Abs(prevTile.y)) >= 1.5f || !move.checkDirectionClear(num2vec((int)move._dir - 1))))
                     {
-                        Debug.Log("Rechecking");
+                        Debug.Log("Rechecking in Active");
                         //Debug.Break();
                         if (ghostMode == ORIGINAL)
                         {
@@ -232,9 +250,9 @@ public class GhostAI : MonoBehaviour {
                             //Sort by distance to target
                             for (int x = 0; x < 4 - 1; x++)
                             {
-                                for(int y = 0; y < 4 - x - 1; y++)
+                                for (int y = 0; y < 4 - x - 1; y++)
                                 {
-                                    if(Vector2.Distance(movements[y], new Vector2(target.transform.position.x, target.transform.position.y)) >
+                                    if (Vector2.Distance(movements[y], new Vector2(target.transform.position.x, target.transform.position.y)) >
                                        Vector2.Distance(movements[y + 1], new Vector2(target.transform.position.x, target.transform.position.y)))
                                     {
                                         Vector2 temp = movements[y];
@@ -254,20 +272,20 @@ public class GhostAI : MonoBehaviour {
                             //    Debug.Log(movements[z] + " with direction " + dirs[z] + " with distance " + Vector2.Distance(movements[z], new Vector2(target.transform.position.x, target.transform.position.y)));
                             //}
                             //Starting with the movement that brings the ghost the closes, check if the movements are valid, using the first one that is
-                            for(int i = 0; i < 4; i ++)
+                            for (int i = 0; i < 4; i++)
                             {
-                                if(move.checkDirectionClear(num2vec((int)dirs[i] - 1)) && !compareDirectionsButUseful(num2vec((int)dirs[i] - 1), reverseDir))
+                                if (move.checkDirectionClear(num2vec((int)dirs[i] - 1)) && !compareDirectionsVectors(num2vec((int)dirs[i] - 1), reverseDir))
                                 {
                                     move._dir = dirs[i];
                                     //Debug.Log("chosen direction is entry " + i + ", " + dirs[i]);
                                     prevTile = transform.position;
                                     previousTick = tick;
                                     i = 10;
-                                    
+
                                 }
                             }
                         }
-                        else if(ghostMode == CUSTOM)
+                        else if (ghostMode == CUSTOM)
                         {
 
                         }
@@ -277,7 +295,7 @@ public class GhostAI : MonoBehaviour {
                     {
                         if (ghostMode == ORIGINAL)
                         {
-                            if(Vector2.Distance(new Vector2(transform.position.x, transform.position.y), new Vector2(pacMan.transform.position.x, pacMan.transform.position.y)) >= 8)
+                            if (Vector2.Distance(new Vector2(transform.position.x, transform.position.y), new Vector2(pacMan.transform.position.x, pacMan.transform.position.y)) >= 8)
                             {
                                 target = pacMan;
                             }
@@ -285,7 +303,7 @@ public class GhostAI : MonoBehaviour {
                             {
                                 target = GameObject.Find("BottomLeft");
                             }
-                            
+
                             Vector2[] movements = new Vector2[4];
                             Movement.Direction[] dirs = new Movement.Direction[4];
                             //Figure out where each possible movement would place the ghost
@@ -325,7 +343,7 @@ public class GhostAI : MonoBehaviour {
                             //Starting with the movement that brings the ghost the closes, check if the movements are valid, using the first one that is
                             for (int i = 0; i < 4; i++)
                             {
-                                if (move.checkDirectionClear(num2vec((int)dirs[i] - 1)) && !compareDirectionsButUseful(num2vec((int)dirs[i] - 1), reverseDir))
+                                if (move.checkDirectionClear(num2vec((int)dirs[i] - 1)) && !compareDirectionsVectors(num2vec((int)dirs[i] - 1), reverseDir))
                                 {
                                     move._dir = dirs[i];
                                     //Debug.Log("chosen direction is entry " + i + ", " + dirs[i]);
@@ -342,58 +360,145 @@ public class GhostAI : MonoBehaviour {
 
                 break;
 
-		case State.entering:
+            case State.entering:
 
-            // Leaving this code in here for you.
-			move._dir = Movement.Direction.still;
-            //Debug.Log("got here 5");
-            if (transform.position.x < 13.48f || transform.position.x > 13.52) {
-			    //print ("GOING LEFT OR RIGHT");
-			    transform.position = Vector3.Lerp (transform.position, new Vector3 (13.5f, transform.position.y, transform.position.z), 3f * Time.deltaTime);
-			} else if (transform.position.y > -13.99f || transform.position.y < -14.01f) {
-				gameObject.GetComponent<Animator>().SetInteger ("Direction", 2);
-				transform.position = Vector3.Lerp (transform.position, new Vector3 (transform.position.x, -14f, transform.position.z), 3f * Time.deltaTime);
-			} else {
-				fleeing = false;
-				dead = false;
-				gameObject.GetComponent<Animator>().SetBool("Running", true);
-				_state = State.waiting;
-			}
+                // Leaving this code in here for you.
+                move._dir = Movement.Direction.still;
+                //Debug.Log("got here 5");
+                if (transform.position.x < 13.48f || transform.position.x > 13.52)
+                {
+                    //print ("GOING LEFT OR RIGHT");
+                    transform.position = Vector3.Lerp(transform.position, new Vector3(13.5f, transform.position.y, transform.position.z), 3f * Time.deltaTime);
+                }
+                else if (transform.position.y > -13.99f || transform.position.y < -14.01f)
+                {
+                    gameObject.GetComponent<Animator>().SetInteger("Direction", 2);
+                    transform.position = Vector3.Lerp(transform.position, new Vector3(transform.position.x, -14f, transform.position.z), 3f * Time.deltaTime);
+                }
+                else
+                {
+                    fleeing = false;
+                    dead = false;
+                    gameObject.GetComponent<Animator>().SetBool("Running", true);
+                    _state = State.waiting;
+                }
 
-            break;
-		}
-	}
+                break;
+            case State.fleeing:
+                Vector2 reverseDir1 = new Vector2(0, 0);
+                reverseDir1 = move.direc * -1;
+                if (justScared)
+                {
+                    if (move._dir == Movement.Direction.right)
+                        move._dir = Movement.Direction.left;
+                    else if (move._dir == Movement.Direction.up)
+                        move._dir = Movement.Direction.down;
+                    else if (move._dir == Movement.Direction.left)
+                        move._dir = Movement.Direction.right;
+                    else if (move._dir == Movement.Direction.down)
+                        move._dir = Movement.Direction.up;
+
+                    justScared = false;
+                    prevTile = transform.position;
+                    startedFleeing = Time.time;
+                }
+                else if ((Mathf.Abs(Mathf.Abs(transform.position.x) - Mathf.Abs(prevTile.x)) >= 1.5f ||
+                        Mathf.Abs(Mathf.Abs(transform.position.y) - Mathf.Abs(prevTile.y)) >= 1.5f || !move.checkDirectionClear(num2vec((int)move._dir - 1))))
+                {
+                    Debug.Log("Rechecking in Fleeing");
+                    //Debug.Break();
+
+                    
+                    Vector2[] movements = new Vector2[4];
+                    Movement.Direction[] dirs = new Movement.Direction[4];
+                    //Figure out where each possible movement would place the ghost
+                    movements[0] = new Vector2(transform.position.x + 1.5f, transform.position.y);
+                    dirs[0] = Movement.Direction.right;
+                    movements[1] = new Vector2(transform.position.x, transform.position.y + 1.5f);
+                    dirs[1] = Movement.Direction.up;
+                    movements[2] = new Vector2(transform.position.x - 1.5f, transform.position.y);
+                    dirs[2] = Movement.Direction.left;
+                    movements[3] = new Vector2(transform.position.x, transform.position.y - 1.5f);
+                    dirs[3] = Movement.Direction.down;
+
+                    //Sort randomly
+                    for (int x = 0; x < 4 - 1; x++)
+                    {
+                        for (int y = 0; y < 4 - x - 1; y++)
+                        {
+                            
+                            if (UnityEngine.Random.value > UnityEngine.Random.value)
+                            {
+                                Vector2 temp = movements[y];
+                                movements[y] = movements[y + 1];
+                                movements[y + 1] = temp;
+
+                                Movement.Direction temp1 = dirs[y];
+                                dirs[y] = dirs[y + 1];
+                                dirs[y + 1] = temp1;
+                            }
+                        }
+                    }
+
+                    //Starting with the movement first in the randomly sorted array, check if the movements are valid, using the first one that is
+                    for (int i = 0; i < 4; i++)
+                    {
+                        if (move.checkDirectionClear(num2vec((int)dirs[i] - 1)) && !compareDirectionsVectors(num2vec((int)dirs[i] - 1), reverseDir1))
+                        {
+                            move._dir = dirs[i];
+                            //Debug.Log("chosen direction is entry " + i + ", " + dirs[i]);
+                            prevTile = transform.position;
+                            previousTick = tick;
+                            i = 10;
+
+                        }
+                    }
+
+                }
+                if(!GetComponent<Animator>().GetBool("Running"))
+                {
+                    //GetComponent<Animator>().SetBool("Running", true);
+                    _state = State.active;
+                }
+                break;
+        }
+
+    }
 
     // Utility routines
 
-	Vector2 num2vec(int n){
+    Vector2 num2vec(int n)
+    {
         switch (n)
         {
             case 0:
                 return new Vector2(0, 1);
             case 1:
-    			return new Vector2(0, -1);
-		    case 2:
-			    return new Vector2(-1, 0);
+                return new Vector2(0, -1);
+            case 2:
+                return new Vector2(-1, 0);
             case 3:
-			    return new Vector2(1, 0);
+                return new Vector2(1, 0);
             default:    // should never happen
                 return new Vector2(0, 0);
         }
-	}
+    }
 
-	bool compareDirections(bool[] n, bool[] p){
-		for(int i = 0; i < n.Length; i++){
-			if (n [i] != p [i]) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-    bool compareDirectionsButUseful(Vector2 n, Vector2 p)
+    bool compareDirections(bool[] n, bool[] p)
     {
-        for(int x = 0; x < 2; x++)
+        for (int i = 0; i < n.Length; i++)
+        {
+            if (n[i] != p[i])
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool compareDirectionsVectors(Vector2 n, Vector2 p)
+    {
+        for (int x = 0; x < 2; x++)
         {
             if (n[x] != p[x])
                 return false;
