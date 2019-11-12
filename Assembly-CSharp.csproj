@@ -62,6 +62,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\CustomTargetLocator.cs" />
     <Compile Include="Assets\Scripts\EntityScripts\Entity.cs" />
     <Compile Include="Assets\Scripts\GhostAI.cs" />
     <Compile Include="Assets\Scripts\InkyTargetLocator.cs" />

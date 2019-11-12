@@ -132,7 +132,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ghostID: 1
-  ghostMode: 1
+  ghostMode: 2
   releaseTime: 0
   waitTime: 0
   range: 0
@@ -149,6 +149,8 @@ MonoBehaviour:
   choices: 
   choice: 0
   frameLockout: 5
+  prevTile: {x: -100, y: -100, z: -100}
+  fleeTime: 5
   _state: 0
 --- !u!58 &58348064196420372
 CircleCollider2D:
