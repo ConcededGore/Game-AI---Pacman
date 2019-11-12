@@ -118,6 +118,7 @@ MonoBehaviour:
   Map: []
   _dir: 0
   MSpeed: 5
+  direc: {x: 0, y: 0}
 --- !u!114 &114364400385463786
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -131,6 +132,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ghostID: 3
+  ghostMode: 1
   releaseTime: 4
   waitTime: 0
   range: 0
@@ -146,6 +148,9 @@ MonoBehaviour:
   chooseDirection: 1
   choices: 
   choice: 0
+  frameLockout: 0
+  prevTile: {x: -100, y: -100, z: -100}
+  fleeTime: 5
   _state: 0
 --- !u!58 &58904341950858544
 CircleCollider2D:
