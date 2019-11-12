@@ -132,7 +132,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ghostID: 2
-  ghostMode: 2
+  ghostMode: 1
   releaseTime: 2
   waitTime: 0
   range: 0
