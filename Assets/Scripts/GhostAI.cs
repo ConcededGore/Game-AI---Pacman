@@ -154,7 +154,7 @@ public class GhostAI : MonoBehaviour
     {
         //Debug.Log("got here 1");
         tick++;
-        if(fleeing)
+        if(fleeing && _state == State.active)
         {
             _state = State.fleeing;
         }
