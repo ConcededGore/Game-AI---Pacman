@@ -206,12 +206,16 @@ public class GhostAI : MonoBehaviour
                     fleeing = false;
                     dead = false;
                     gameObject.GetComponent<Animator>().SetBool("Running", false);
+                    prevTile = new Vector3(100, 100, 100); //Make sure it starts moving by setting prevTile to reall far away
+                    //Debug.Log("going from leaving to active");
                     _state = State.active;
                 }
                 break;
 
             case (State.active):
                 justScared = true;
+                //if (ghostID == 1)
+                    //Debug.Log("prevTile x is " + prevTile.x + " and prevTile y is " + prevTile.y);
                 if (!dead) {
                     // etc.
                     // most of your AI code will be placed here!
@@ -588,6 +592,7 @@ public class GhostAI : MonoBehaviour
                         }
                     }
                 } else { // Dead behavior --------------------------------------------------------------------------------------------------------------------------------------
+                    //Debug.Log("I am " + ghostID + " and I'm dead");
                     Vector2 reverseDir = new Vector2(0, 0);
                     reverseDir = move.direc * -1;
                     target = GameObject.Find("HouseTarget");
