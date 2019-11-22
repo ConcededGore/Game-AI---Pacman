@@ -154,7 +154,7 @@ public class GhostAI : MonoBehaviour
     {
         //Debug.Log("got here 1");
         tick++;
-        if(fleeing && _state == State.active)
+        if(fleeing && _state == State.active && !dead)
         {
             _state = State.fleeing;
         }
@@ -163,6 +163,7 @@ public class GhostAI : MonoBehaviour
             case (State.waiting):
                 //Debug.Log("got here 2");
                 // below is some sample code showing how you deal with animations, etc.
+
                 justScared = true;
                 move._dir = Movement.Direction.still;
                 if (releaseTime <= 0f)
@@ -211,17 +212,19 @@ public class GhostAI : MonoBehaviour
 
             case (State.active):
                 justScared = true;
-                if (!dead)
-                {
+                if (!dead) {
                     // etc.
                     // most of your AI code will be placed here!
-
+                    
                     //remember what direction reverse is
                     Vector2 reverseDir = new Vector2(0, 0);
                     reverseDir = move.direc * -1;
-                    if (ghostID == BLINKY && /*tick - previousTick >= frameLockout*/ (Mathf.Abs(Mathf.Abs(transform.position.x) - Mathf.Abs(prevTile.x)) >= 1.5f ||
+                    if (ghostID == BLINKY && (Mathf.Abs(Mathf.Abs(transform.position.x) - Mathf.Abs(prevTile.x)) >= 1.5f ||
                         Mathf.Abs(Mathf.Abs(transform.position.y) - Mathf.Abs(prevTile.y)) >= 1.5f || !move.checkDirectionClear(num2vec((int)move._dir - 1))))
                     {
+                        if (ghostID == BLINKY) {
+                            Debug.Log("test");
+                        }
                         //Debug.Break();
                         if (ghostMode == ORIGINAL)
                         {
@@ -584,6 +587,54 @@ public class GhostAI : MonoBehaviour
                             }
                         }
                     }
+                } else { // Dead behavior --------------------------------------------------------------------------------------------------------------------------------------
+                    Vector2 reverseDir = new Vector2(0, 0);
+                    reverseDir = move.direc * -1;
+                    target = GameObject.Find("HouseTarget");
+
+                    if (Vector2.Distance(transform.position, target.transform.position) < .2f) {
+                        move._dir = Movement.Direction.still;
+                        _state = State.entering;
+                    }
+
+                    Vector2[] movements = new Vector2[4];
+                    Movement.Direction[] dirs = new Movement.Direction[4];
+                    //Figure out where each possible movement would place the ghost
+                    movements[0] = new Vector2(transform.position.x + 1.5f, transform.position.y);
+                    dirs[0] = Movement.Direction.right;
+                    movements[1] = new Vector2(transform.position.x, transform.position.y + 1.5f);
+                    dirs[1] = Movement.Direction.up;
+                    movements[2] = new Vector2(transform.position.x - 1.5f, transform.position.y);
+                    dirs[2] = Movement.Direction.left;
+                    movements[3] = new Vector2(transform.position.x, transform.position.y - 1.5f);
+                    dirs[3] = Movement.Direction.down;
+
+                    //Sort by distance to target
+                    for (int x = 0; x < 4 - 1; x++) {
+                        for (int y = 0; y < 4 - x - 1; y++) {
+                            if (Vector2.Distance(movements[y], new Vector2(target.transform.position.x, target.transform.position.y)) >
+                               Vector2.Distance(movements[y + 1], new Vector2(target.transform.position.x, target.transform.position.y))) {
+                                Vector2 temp = movements[y];
+                                movements[y] = movements[y + 1];
+                                movements[y + 1] = temp;
+
+                                Movement.Direction temp1 = dirs[y];
+                                dirs[y] = dirs[y + 1];
+                                dirs[y + 1] = temp1;
+                            }
+                        }
+                    }
+                    //Starting with the movement that brings the ghost the closes, check if the movements are valid, using the first one that is
+                    for (int i = 0; i < 4; i++) {
+                        if (move.checkDirectionClear(num2vec((int)dirs[i] - 1)) && !compareDirectionsVectors(num2vec((int)dirs[i] - 1), reverseDir)) {
+                            move._dir = dirs[i];
+                            //Debug.Log("chosen direction is entry " + i + ", " + dirs[i]);
+                            prevTile = transform.position;
+                            previousTick = tick;
+                            i = 10;
+
+                        }
+                    }
                 }
                 // etc.
 
@@ -612,6 +663,11 @@ public class GhostAI : MonoBehaviour
 
                 break;
             case State.fleeing:
+
+                if (dead) {
+                    _state = State.active;
+                }
+
                 Vector2 reverseDir1 = new Vector2(0, 0);
                 reverseDir1 = move.direc * -1;
                 if (justScared)
